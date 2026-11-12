@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { loginAction } from '@/app/actions/auth';
+import { adminLoginAction } from '@/app/actions/auth';
 import { Shield, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function AdminLoginPage() {
@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const result = await loginAction(formData);
+    const result = await adminLoginAction(formData);
 
     if (result && !result.success) {
       setError(result.error);
@@ -47,14 +47,14 @@ export default function AdminLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-snow/90 mb-1">
-              Yönetici E-posta
+              Yönetici Adı
             </label>
             <input
-              type="email"
-              name="email"
-              required
-              placeholder="admin@eternalproduction.net"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-forest-dark border border-forest/80 focus:border-gold focus:outline-none text-snow text-sm transition-colors"
+              type="text"
+              name="username"
+              value="destek@eternalproduction.net"
+              readOnly
+              className="w-full px-3.5 py-2.5 rounded-xl bg-forest-dark border border-forest/80 text-snow text-sm"
             />
           </div>
 
