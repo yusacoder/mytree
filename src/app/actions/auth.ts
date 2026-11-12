@@ -87,6 +87,23 @@ export async function registerAction(formData: FormData) {
       };
     }
 
+    const { error: treeError } = await (adminSupabase.from('trees') as any).insert({
+      user_id: authData.user.id,
+      tree_name: `${username}'in Ağacı`,
+      theme: 'classic',
+      accept_messages: true,
+      is_public: true,
+      settings: {},
+    });
+    if (treeError) {
+      await (adminSupabase.from('profiles') as any).delete().eq('id', authData.user.id);
+      await adminSupabase.auth.admin.deleteUser(authData.user.id);
+      return {
+        success: false,
+        error: 'Hesap için ağaç oluşturulamadı: ' + treeError.message,
+      };
+    }
+
     // Sign the new user in immediately and persist the session cookies.
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -128,7 +145,7 @@ export async function loginAction(formData: FormData) {
     const adminSupabase = createAdminClient();
     const { data: rawProfile } = await adminSupabase
       .from('profiles')
-      .select('id, is_suspended')
+      .select('id, username, is_suspended')
       .eq('username', username)
       .maybeSingle();
 
@@ -159,6 +176,31 @@ export async function loginAction(formData: FormData) {
 
     if (authError || !authData.user) {
       return { success: false, error: 'Kullanıcı adı veya şifreniz hatalı.' };
+    }
+
+    // Older accounts may not have completed tree setup; create a default tree so
+    // dashboard, settings, and messages are available after sign-in.
+    const { data: existingTree } = await adminSupabase
+      .from('trees')
+      .select('id')
+      .eq('user_id', authData.user.id)
+      .maybeSingle();
+
+    if (!existingTree) {
+      const { error: treeError } = await (adminSupabase.from('trees') as any).insert({
+        user_id: authData.user.id,
+        tree_name: `${profile.username}'in Ağacı`,
+        theme: 'classic',
+        accept_messages: true,
+        is_public: true,
+        settings: {},
+      });
+      if (treeError) {
+        return {
+          success: false,
+          error: 'Ağaç oluşturulamadı: ' + treeError.message,
+        };
+      }
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Giriş yapılamadı.';
