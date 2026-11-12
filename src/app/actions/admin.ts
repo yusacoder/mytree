@@ -89,6 +89,52 @@ export async function toggleUserSuspensionAction(userId: string, isSuspended: bo
   }
 }
 
+export async function deleteUserAccountAction(targetUserId: string) {
+  try {
+    const { adminId } = await checkAdminAuth();
+    if (typeof targetUserId !== 'string' || !/^[0-9a-f-]{36}$/i.test(targetUserId)) {
+      return { success: false, error: 'Kullanıcı bilgisi geçersiz.' };
+    }
+    if (targetUserId === adminId) {
+      return { success: false, error: 'Kendi yönetici hesabınızı bu panelden silemezsiniz.' };
+    }
+
+    const adminSupabase = createAdminClient();
+    const { data: rawTarget, error: targetError } = await adminSupabase
+      .from('profiles')
+      .select('id, username, is_admin')
+      .eq('id', targetUserId)
+      .maybeSingle();
+
+    const target = rawTarget as { id: string; username: string; is_admin?: boolean } | null;
+    if (targetError || !target) {
+      return { success: false, error: 'Kullanıcı bulunamadı.' };
+    }
+    if (target.is_admin) {
+      return { success: false, error: 'Yönetici hesapları bu ekrandan silinemez.' };
+    }
+
+    const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(target.id);
+    if (deleteError) {
+      return { success: false, error: 'Kullanıcı silinemedi. Lütfen tekrar deneyin.' };
+    }
+
+    await (adminSupabase.from('admin_logs') as any).insert({
+      admin_id: adminId,
+      action: 'delete_user',
+      details: { target_user_id: target.id, username: target.username },
+    });
+
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Kullanıcı silinemedi.',
+    };
+  }
+}
+
 export async function updateReportStatusAction(reportId: string, status: 'resolved' | 'dismissed') {
   try {
     const { adminId } = await checkAdminAuth();
