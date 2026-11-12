@@ -156,3 +156,46 @@ export async function deleteSpamMessageAction(messageId: string) {
     return { success: false, error: message };
   }
 }
+
+export async function updateAdminPasswordAction(newPassword: string) {
+  try {
+    const { adminId } = await checkAdminAuth();
+    if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) {
+      return { success: false, error: 'Yeni şifre en az 8 karakter olmalıdır.' };
+    }
+
+    const adminSupabase = createAdminClient();
+    const { data: admins, error: adminsError } = await adminSupabase
+      .from('profiles')
+      .select('id')
+      .eq('is_admin', true)
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    const primaryAdmin = admins?.[0];
+    if (adminsError || !primaryAdmin || primaryAdmin.id !== adminId) {
+      return { success: false, error: 'Bu yönetici hesabının şifresini değiştirme yetkiniz yok.' };
+    }
+
+    const { error } = await adminSupabase.auth.admin.updateUserById(adminId, {
+      password: newPassword,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    await (adminSupabase.from('admin_logs') as any).insert({
+      admin_id: adminId,
+      action: 'update_admin_password',
+      details: {},
+    });
+
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Şifre değiştirilemedi.',
+    };
+  }
+}
