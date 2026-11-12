@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { TreePine, Sparkles } from 'lucide-react';
 
-export function Footer() {
+interface FooterProps {\n  user?: { username?: string; isAdmin?: boolean } | null;\n}\n\nexport function Footer({ user }: FooterProps) {
   return (
     <footer className="w-full border-t border-forest/40 bg-surface/80 py-10 px-4 sm:px-6 lg:px-8 mt-auto">
       <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
@@ -24,15 +24,36 @@ export function Footer() {
           <Link href="/" className="hover:text-gold transition-colors">
             Ana Sayfa
           </Link>
-          <Link href="/kayit" className="hover:text-gold transition-colors">
-            Ağaç Oluştur
-          </Link>
-          <Link href="/giris" className="hover:text-gold transition-colors">
-            Giriş Yap
-          </Link>
-          <Link href="/admin/giris" className="hover:text-gold transition-colors">
-            Yönetim
-          </Link>
+          {user ? (
+            <>
+              <Link href="/hesabim" className="hover:text-gold transition-colors">
+                Panelim
+              </Link>
+              <Link href="/hesabim/mesajlar" className="hover:text-gold transition-colors">
+                Gelen Mesajlar
+              </Link>
+              <Link href="/hesabim/ayarlar" className="hover:text-gold transition-colors">
+                Ayarlar
+              </Link>
+              {user.isAdmin && (
+                <Link href="/admin" className="hover:text-gold transition-colors">
+                  Yönetim
+                </Link>
+              )}
+            </>
+          ) : (
+            <>
+              <Link href="/kayit" className="hover:text-gold transition-colors">
+                Ağaç Oluştur
+              </Link>
+              <Link href="/giris" className="hover:text-gold transition-colors">
+                Giriş Yap
+              </Link>
+              <Link href="/admin/giris" className="hover:text-gold transition-colors">
+                Yönetim
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="text-xs text-muted flex items-center gap-1.5">
