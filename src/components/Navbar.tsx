@@ -73,10 +73,20 @@ export function Navbar({ user }: NavbarProps) {
                 </Link>
               )}
               <Link
-                href="/hesabim/ayarlar"
-                className="text-xs text-muted hover:text-snow"
+                href="/hesabim/mesajlar"
+                className={`text-sm font-medium transition-colors hover:text-gold ${
+                  pathname === '/hesabim/mesajlar' ? 'text-gold' : 'text-snow/80'
+                }`}
               >
-                {user.username ? `@${user.username}` : 'Ayarlar'}
+                Gelen Mesajlar
+              </Link>
+              <Link
+                href="/hesabim/ayarlar"
+                className={`text-sm font-medium transition-colors hover:text-gold ${
+                  pathname === '/hesabim/ayarlar' ? 'text-gold' : 'text-snow/80'
+                }`}
+              >
+                Ayarlar
               </Link>
             </div>
           ) : (
