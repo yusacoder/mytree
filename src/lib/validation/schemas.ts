@@ -12,12 +12,11 @@ export const registerSchema = z.object({
     .min(2, 'İsim en az 2 karakter olmalıdır')
     .max(40, 'İsim en fazla 40 karakter olabilir')
     .trim(),
-  email: z.string().email('Geçerli bir e-posta adresi giriniz').trim().toLowerCase(),
   password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
 });
 
 export const loginSchema = z.object({
-  email: z.string().email('Geçerli bir e-posta adresi giriniz').trim().toLowerCase(),
+  username: z.string().min(3, 'Kullanıcı adınızı giriniz').max(24).trim().toLowerCase(),
   password: z.string().min(1, 'Lütfen şifrenizi giriniz'),
 });
 
