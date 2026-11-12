@@ -62,12 +62,7 @@ export default function HomePage() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
 
-              <Link
-                href="/giris"
-                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-surface hover:bg-surface/80 border border-forest text-snow font-medium text-base transition-colors flex items-center justify-center gap-2"
-              >
-                Giriş Yap
-              </Link>
+
             </div>
 
             <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs text-muted">
