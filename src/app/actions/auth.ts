@@ -149,7 +149,7 @@ export async function loginAction(formData: FormData) {
       .eq('username', username)
       .maybeSingle();
 
-    const profile = rawProfile as { id: string; is_suspended?: boolean } | null;
+    const profile = rawProfile as { id: string; username: string; is_suspended?: boolean } | null;
     if (!profile) {
       return { success: false, error: 'Kullanıcı adı veya şifreniz hatalı.' };
     }
