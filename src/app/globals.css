@@ -25,3 +25,18 @@ body {
     text-wrap: balance;
   }
 }
+
+
+@media (max-width: 640px) {
+  .snow-flake:nth-child(n + 7) {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snow-flake,
+  .animate-twinkle,
+  .animate-float {
+    animation: none !important;
+  }
+}
