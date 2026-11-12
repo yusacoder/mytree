@@ -17,20 +17,23 @@ export default async function SettingsPage() {
 
   const adminSupabase = createAdminClient();
 
-  const { data: rawProfile } = await adminSupabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .maybeSingle();
+  const [{ data: rawProfile }, { data: initialTree }] = await Promise.all([
+    adminSupabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle(),
+    adminSupabase
+      .from('trees')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
 
   const profile = rawProfile as any;
   if (!profile) redirect('/giris');
 
-  let { data: rawTree } = await adminSupabase
-    .from('trees')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  let rawTree = initialTree;
 
   if (!rawTree) {
     const { data: createdTree, error: createTreeError } = await (adminSupabase.from('trees') as any)
