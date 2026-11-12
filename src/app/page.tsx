@@ -13,10 +13,6 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const [selectedTheme, setSelectedTheme] = useState<'classic' | 'snowy' | 'golden' | 'midnight'>('golden');
-  const [activeOrnamentNote, setActiveOrnamentNote] = useState<string | null>(
-    'Bu ağaç sana özel. Arkadaşların dallara kendi sevgilerini bırakacak!'
-  );
 
   return (
     <div className="flex flex-col w-full overflow-hidden">
