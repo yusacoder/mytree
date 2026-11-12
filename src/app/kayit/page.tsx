@@ -82,20 +82,7 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-snow/90 mb-1">
-              E-posta Adresi
-            </label>
-            <input
-              type="email"
-              name="email"
-              required
-              placeholder="deniz@example.com"
-              className="w-full px-3.5 py-2.5 rounded-xl bg-forest-dark border border-forest/80 focus:border-gold focus:outline-none text-snow text-sm transition-colors"
-            />
-          </div>
-
-          <div>
+<div>
             <label className="block text-xs font-medium text-snow/90 mb-1">
               Şifre
             </label>
