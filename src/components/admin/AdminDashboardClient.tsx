@@ -6,6 +6,7 @@ import {
   toggleUserSuspensionAction,
   updateReportStatusAction,
   deleteSpamMessageAction,
+  deleteUserAccountAction,
   updateAdminPasswordAction,
 } from '@/app/actions/admin';
 import {
@@ -75,6 +76,7 @@ export function AdminDashboardClient({
   const [adminPassword, setAdminPassword] = useState('');
   const [adminPasswordConfirm, setAdminPasswordConfirm] = useState('');
   const [adminPasswordLoading, setAdminPasswordLoading] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const showNotification = (text: string, isError = false) => {
     setMsg({ text, isError });
@@ -115,6 +117,32 @@ export function AdminDashboardClient({
       );
     } else {
       showNotification(res.error || 'İşlem başarısız.', true);
+    }
+  };
+
+  const handleDeleteUser = async (
+    userId: string,
+    username: string,
+    displayName: string
+  ) => {
+    const confirmed = window.confirm(
+      `@${username} (${displayName}) hesabını kalıcı olarak silmek istiyor musunuz? Bu kullanıcının hesabı, ağacı, süsleri ve mesajları silinir. Bu işlem geri alınamaz.`
+    );
+    if (!confirmed) return;
+
+    setDeletingUserId(userId);
+    try {
+      const res = await deleteUserAccountAction(userId);
+      if (res.success) {
+        setUsers((prev) => prev.filter((user) => user.id !== userId));
+        showNotification(`@${username} ve ilişkili verileri silindi.`);
+      } else {
+        showNotification(res.error || 'Kullanıcı silinemedi.', true);
+      }
+    } catch {
+      showNotification('Kullanıcı silinemedi. Lütfen tekrar deneyin.', true);
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -366,16 +394,31 @@ export function AdminDashboardClient({
                       {new Date(user.created_at).toLocaleDateString('tr-TR')}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleToggleSuspension(user.id, user.is_suspended)}
-                        className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
-                          user.is_suspended
-                            ? 'bg-green-900/60 text-green-300 hover:bg-green-800'
-                            : 'bg-red-950/60 text-red-300 hover:bg-red-900'
-                        }`}
-                      >
-                        {user.is_suspended ? 'Aktifleştir' : 'Askıya Al'}
-                      </button>
+                      <div className="inline-flex items-center gap-2 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSuspension(user.id, user.is_suspended)}
+                          className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors ${
+                            user.is_suspended
+                              ? 'bg-green-900/60 text-green-300 hover:bg-green-800'
+                              : 'bg-red-950/60 text-red-300 hover:bg-red-900'
+                          }`}
+                        >
+                          {user.is_suspended ? 'Aktifleştir' : 'Askıya Al'}
+                        </button>
+                        {user.is_admin ? (
+                          <span className="px-2 py-1 text-[10px] text-muted">Yönetici korunuyor</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(user.id, user.username, user.display_name)}
+                            disabled={deletingUserId === user.id}
+                            className="px-3 py-1 rounded-lg text-[11px] font-semibold text-red-200 bg-red-950/60 hover:bg-red-900 disabled:opacity-50"
+                          >
+                            {deletingUserId === user.id ? 'Siliniyor…' : 'Sil'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
