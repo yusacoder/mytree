@@ -26,14 +26,30 @@ export default async function SettingsPage() {
   const profile = rawProfile as any;
   if (!profile) redirect('/giris');
 
-  const { data: rawTree } = await adminSupabase
+  let { data: rawTree } = await adminSupabase
     .from('trees')
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle();
 
+  if (!rawTree) {
+    const { data: createdTree, error: createTreeError } = await (adminSupabase.from('trees') as any)
+      .insert({
+        user_id: user.id,
+        tree_name: `${profile.username}'in Ağacı`,
+        theme: 'classic',
+        accept_messages: true,
+        is_public: true,
+        settings: {},
+      })
+      .select('*')
+      .single();
+
+    if (createTreeError || !createdTree) redirect('/agac-olustur');
+    rawTree = createdTree;
+  }
+
   const tree = rawTree as any;
-  if (!tree) redirect('/agac-olustur');
 
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 sm:px-6 lg:px-8">
