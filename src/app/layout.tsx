@@ -37,7 +37,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let user = null;
+  let user: { username?: string; isAdmin?: boolean } | null = null;
   try {
     const supabase = createClient();
     const {
@@ -69,7 +69,7 @@ export default async function RootLayout({
         <SnowEffect />
         <Navbar user={user} />
         <main className="flex-1 relative z-10 flex flex-col">{children}</main>
-        <Footer />
+        <Footer user={user} />
       </body>
     </html>
   );
