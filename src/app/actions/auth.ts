@@ -230,7 +230,7 @@ export async function adminLoginAction(formData: FormData) {
       .order('created_at', { ascending: true })
       .limit(1);
 
-    const adminProfile = admins?.[0];
+    const adminProfile = (admins as unknown as { id: string }[] | null)?.[0];
     if (adminsError || !adminProfile) {
       return { success: false, error: 'Yönetici hesabı bulunamadı.' };
     }
