@@ -172,7 +172,7 @@ export async function updateAdminPasswordAction(newPassword: string) {
       .order('created_at', { ascending: true })
       .limit(1);
 
-    const primaryAdmin = admins?.[0];
+    const primaryAdmin = (admins as unknown as { id: string }[] | null)?.[0];
     if (adminsError || !primaryAdmin || primaryAdmin.id !== adminId) {
       return { success: false, error: 'Bu yönetici hesabının şifresini değiştirme yetkiniz yok.' };
     }
