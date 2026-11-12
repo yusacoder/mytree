@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DashboardNav } from '@/components/tree/DashboardNav';
-import { OrnamentIcon, ORNAMENT_METADATA } from '@/components/tree/Ornaments';
+import { OrnamentIcon } from '@/components/tree/Ornaments';
+import { ORNAMENT_METADATA } from '@/components/tree/ornament-metadata';
 import { Mail, Lock, Sparkles, Clock } from 'lucide-react';
 
 export default async function UserMessagesPage() {
