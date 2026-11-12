@@ -40,14 +40,16 @@ export default async function RootLayout({
   let user: { username?: string; isAdmin?: boolean } | null = null;
   try {
     const supabase = createClient();
+    // Navbar visibility only; protected pages still verify the session with getUser().
     const {
-      data: { user: authUser },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const authUser = session?.user;
 
     if (authUser) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('*')
+        .select('username, is_admin')
         .eq('id', authUser.id)
         .maybeSingle();
 
