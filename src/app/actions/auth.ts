@@ -86,6 +86,19 @@ export async function registerAction(formData: FormData) {
         error: profileError.message || 'Kullanıcı profili oluşturulamadı.',
       };
     }
+
+    // Sign the new user in immediately and persist the session cookies.
+    const supabase = createClient();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: internalEmail,
+      password,
+    });
+    if (signInError) {
+      return {
+        success: false,
+        error: 'Hesap oluşturuldu ancak otomatik giriş yapılamadı. Lütfen giriş yapmayı deneyin.',
+      };
+    }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Sunucu hatası oluştu.';
     return {
@@ -94,7 +107,7 @@ export async function registerAction(formData: FormData) {
     };
   }
 
-  redirect('/giris?registered=1');
+  redirect('/agac-olustur');
 }
 
 export async function loginAction(formData: FormData) {
