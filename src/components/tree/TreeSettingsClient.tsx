@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { updateTreeSettingsAction } from '@/app/actions/tree';
+import { logoutAction } from '@/app/actions/auth';
 import { TreeTheme } from '@/types/database';
 import { ChristmasTree } from '@/components/tree/ChristmasTree';
 import {
@@ -11,6 +12,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  LogOut,
 } from 'lucide-react';
 
 interface TreeSettingsClientProps {
@@ -37,6 +39,7 @@ export function TreeSettingsClient({ initialTree }: TreeSettingsClientProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showLogoutWarning, setShowLogoutWarning] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -214,7 +217,71 @@ export function TreeSettingsClient({ initialTree }: TreeSettingsClientProps) {
             />
           </div>
         </div>
+
+        <div className="w-full glass-panel rounded-3xl p-6 space-y-4">
+          <div>
+            <h3 className="font-serif text-base font-bold text-snow flex items-center gap-2">
+              <LogOut className="h-4 w-4 text-gold" />
+              Hesaptan Çıkış
+            </h3>
+            <p className="text-xs text-muted mt-2">
+              Bu cihazdaki hesabından çıkış yapabilirsin.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowLogoutWarning(true)}
+            className="w-full py-3 rounded-xl border border-red-500/40 bg-red-950/30 hover:bg-red-950/60 text-red-200 font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Çıkış Yap
+          </button>
+        </div>
       </div>
+
+      {showLogoutWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label="Uyarıyı kapat"
+            onClick={() => setShowLogoutWarning(false)}
+            className="absolute inset-0 bg-black/70"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-warning-title"
+            className="relative w-full max-w-md glass-panel-gold rounded-2xl p-6 shadow-2xl space-y-5"
+          >
+            <div>
+              <h2 id="logout-warning-title" className="font-serif text-lg font-bold text-snow">
+                Çıkış yapmadan önce
+              </h2>
+              <p className="text-sm text-muted mt-3 leading-relaxed">
+                Kullanıcı adını ve şifreni hatırladığından emin ol. Kullanıcı adı veya şifre sıfırlama seçeneği bulunmuyor.
+                Çıkış yapmak istiyor musun?
+              </p>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLogoutWarning(false)}
+                className="px-4 py-2.5 rounded-xl border border-forest text-snow font-medium text-sm hover:bg-forest/50 transition-colors"
+              >
+                Vazgeç
+              </button>
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="w-full px-4 py-2.5 rounded-xl bg-red-700 hover:bg-red-600 text-white font-semibold text-sm transition-colors"
+                >
+                  Evet, çıkış yap
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
