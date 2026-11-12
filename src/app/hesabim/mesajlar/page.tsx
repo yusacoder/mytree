@@ -27,14 +27,30 @@ export default async function UserMessagesPage() {
   const profile = rawProfile as any;
   if (!profile) redirect('/giris');
 
-  const { data: rawTree } = await adminSupabase
+  let { data: rawTree } = await adminSupabase
     .from('trees')
     .select('id')
     .eq('user_id', user.id)
     .maybeSingle();
 
+  if (!rawTree) {
+    const { data: createdTree, error: createTreeError } = await (adminSupabase.from('trees') as any)
+      .insert({
+        user_id: user.id,
+        tree_name: `${profile.username}'in Ağacı`,
+        theme: 'classic',
+        accept_messages: true,
+        is_public: true,
+        settings: {},
+      })
+      .select('id')
+      .single();
+
+    if (createTreeError || !createdTree) redirect('/agac-olustur');
+    rawTree = createdTree;
+  }
+
   const tree = rawTree as any;
-  if (!tree) redirect('/agac-olustur');
 
   const { data: rawSetting } = await adminSupabase
     .from('app_settings')
