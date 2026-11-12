@@ -2,7 +2,11 @@ import React from 'react';
 import Link from 'next/link';
 import { TreePine, Sparkles } from 'lucide-react';
 
-interface FooterProps {\n  user?: { username?: string; isAdmin?: boolean } | null;\n}\n\nexport function Footer({ user }: FooterProps) {
+interface FooterProps {
+  user?: { username?: string; isAdmin?: boolean } | null;
+}
+
+export function Footer({ user }: FooterProps) {
   return (
     <footer className="w-full border-t border-forest/40 bg-surface/80 py-10 px-4 sm:px-6 lg:px-8 mt-auto">
       <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
