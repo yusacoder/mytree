@@ -213,6 +213,54 @@ export async function loginAction(formData: FormData) {
   redirect('/hesabim');
 }
 
+export async function adminLoginAction(formData: FormData) {
+  const identifier = String(formData.get('username') || '').trim().toLowerCase();
+  const password = String(formData.get('password') || '');
+
+  if (identifier !== 'destek@eternalproduction.net' || !password) {
+    return { success: false, error: 'Yönetici adı veya şifresi hatalı.' };
+  }
+
+  try {
+    const adminSupabase = createAdminClient();
+    const { data: admins, error: adminsError } = await adminSupabase
+      .from('profiles')
+      .select('id')
+      .eq('is_admin', true)
+      .order('created_at', { ascending: true })
+      .limit(1);
+
+    const adminProfile = admins?.[0];
+    if (adminsError || !adminProfile) {
+      return { success: false, error: 'Yönetici hesabı bulunamadı.' };
+    }
+
+    const { data: authUserData, error: authUserError } =
+      await adminSupabase.auth.admin.getUserById(adminProfile.id);
+    const authEmail = authUserData.user?.email;
+    if (authUserError || !authEmail) {
+      return { success: false, error: 'Yönetici hesabı bulunamadı.' };
+    }
+
+    const supabase = createClient();
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: authEmail,
+      password,
+    });
+
+    if (signInError || !signInData.user) {
+      return { success: false, error: 'Yönetici adı veya şifresi hatalı.' };
+    }
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Yönetici girişi başarısız.',
+    };
+  }
+
+  redirect('/admin');
+}
+
 export async function logoutAction() {
   const supabase = createClient();
   await supabase.auth.signOut();
