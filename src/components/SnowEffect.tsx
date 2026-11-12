@@ -1,41 +1,25 @@
-'use client';
+import React from 'react';
 
-import React, { useEffect, useState } from 'react';
-
-interface Flake {
-  id: number;
-  x: number;
-  size: number;
-  duration: number;
-  delay: number;
-  opacity: number;
-}
+const FLAKES = [
+  { x: 4, size: 3, duration: 11, delay: 0, opacity: 0.5 },
+  { x: 13, size: 2, duration: 14, delay: 3, opacity: 0.4 },
+  { x: 22, size: 4, duration: 12, delay: 6, opacity: 0.55 },
+  { x: 31, size: 2, duration: 15, delay: 1, opacity: 0.35 },
+  { x: 42, size: 3, duration: 10, delay: 5, opacity: 0.5 },
+  { x: 52, size: 2, duration: 13, delay: 2, opacity: 0.4 },
+  { x: 61, size: 4, duration: 14, delay: 7, opacity: 0.5 },
+  { x: 71, size: 2, duration: 12, delay: 4, opacity: 0.35 },
+  { x: 82, size: 3, duration: 15, delay: 0, opacity: 0.5 },
+  { x: 93, size: 2, duration: 11, delay: 5, opacity: 0.4 },
+];
 
 export function SnowEffect() {
-  const [flakes, setFlakes] = useState<Flake[]>([]);
-
-  useEffect(() => {
-    const generated: Flake[] = [];
-    const count = 35;
-    for (let i = 0; i < count; i++) {
-      generated.push({
-        id: i,
-        x: Math.random() * 100,
-        size: Math.random() * 3.5 + 1.5,
-        duration: Math.random() * 8 + 7,
-        delay: Math.random() * 6,
-        opacity: Math.random() * 0.7 + 0.25,
-      });
-    }
-    setFlakes(generated);
-  }, []);
-
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      {flakes.map((flake) => (
+      {FLAKES.map((flake, index) => (
         <span
-          key={flake.id}
-          className="absolute rounded-full bg-snow shadow-sm block animate-snow-fall"
+          key={index}
+          className="snow-flake absolute rounded-full bg-snow block animate-snow-fall"
           style={{
             left: `${flake.x}vw`,
             width: `${flake.size}px`,
