@@ -27,23 +27,21 @@ export default async function DashboardPage() {
 
   const adminSupabase = createAdminClient();
 
-  const { data: rawProfile } = await adminSupabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .maybeSingle();
+  const [{ data: rawProfile }, { data: rawTree }] = await Promise.all([
+    adminSupabase
+      .from('profiles')
+      .select('username, display_name')
+      .eq('id', user.id)
+      .maybeSingle(),
+    adminSupabase
+      .from('trees')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
 
   const profile = rawProfile as any;
-
-  if (!profile) {
-    redirect('/kayit');
-  }
-
-  const { data: rawTree } = await adminSupabase
-    .from('trees')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  if (!profile) redirect('/kayit');
 
   const tree = rawTree as any;
 
@@ -51,29 +49,29 @@ export default async function DashboardPage() {
     redirect('/agac-olustur');
   }
 
-  const { data: rawOrnaments } = await adminSupabase
-    .from('ornaments')
-    .select('*')
-    .eq('tree_id', tree.id)
-    .order('created_at', { ascending: true });
+  const [{ data: rawOrnaments }, { data: rawVisits }, { data: rawSetting }] =
+    await Promise.all([
+      adminSupabase
+        .from('ornaments')
+        .select('id, tree_id, ornament_type, position_x, position_y, created_at')
+        .eq('tree_id', tree.id)
+        .order('created_at', { ascending: true }),
+      adminSupabase
+        .from('tree_visits')
+        .select('visit_count')
+        .eq('tree_id', tree.id),
+      adminSupabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', 'message_unlock_date')
+        .maybeSingle(),
+    ]);
 
   const ornaments = (rawOrnaments || []) as any[];
-
-  const { data: rawVisits } = await adminSupabase
-    .from('tree_visits')
-    .select('visit_count')
-    .eq('tree_id', tree.id);
-
   const totalVisits = (rawVisits || []).reduce(
     (acc: number, curr: any) => acc + (curr.visit_count || 0),
     0
   );
-
-  const { data: rawSetting } = await adminSupabase
-    .from('app_settings')
-    .select('setting_value')
-    .eq('setting_key', 'message_unlock_date')
-    .maybeSingle();
 
   const unlockDateStr =
     (rawSetting as any)?.setting_value || '2026-12-25T00:00:00.000Z';
