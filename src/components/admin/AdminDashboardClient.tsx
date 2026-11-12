@@ -6,6 +6,7 @@ import {
   toggleUserSuspensionAction,
   updateReportStatusAction,
   deleteSpamMessageAction,
+  updateAdminPasswordAction,
 } from '@/app/actions/admin';
 import {
   Users,
@@ -71,10 +72,36 @@ export function AdminDashboardClient({
     initialSettings['message_unlock_date']?.substring(0, 10) || '2026-12-25'
   );
   const [msg, setMsg] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminPasswordConfirm, setAdminPasswordConfirm] = useState('');
+  const [adminPasswordLoading, setAdminPasswordLoading] = useState(false);
 
   const showNotification = (text: string, isError = false) => {
     setMsg({ text, isError });
     setTimeout(() => setMsg(null), 3000);
+  };
+
+  const handleAdminPasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (adminPassword.length < 8) {
+      showNotification('Yeni şifre en az 8 karakter olmalıdır.', true);
+      return;
+    }
+    if (adminPassword !== adminPasswordConfirm) {
+      showNotification('Şifreler eşleşmiyor.', true);
+      return;
+    }
+
+    setAdminPasswordLoading(true);
+    const res = await updateAdminPasswordAction(adminPassword);
+    setAdminPasswordLoading(false);
+    if (res.success) {
+      setAdminPassword('');
+      setAdminPasswordConfirm('');
+      showNotification('Yönetici şifresi güncellendi.');
+    } else {
+      showNotification(res.error || 'Şifre değiştirilemedi.', true);
+    }
   };
 
   const handleToggleSuspension = async (userId: string, currentStatus: boolean) => {
@@ -424,6 +451,48 @@ export function AdminDashboardClient({
                 {settings['maintenance_mode'] === 'true' ? 'Aktif' : 'Pasif'}
               </button>
             </div>
+          </div>
+
+          <div className="glass-panel-gold rounded-2xl p-6 space-y-4">
+            <h3 className="font-serif font-bold text-snow flex items-center gap-2">
+              <Lock className="h-5 w-5 text-gold" />
+              Yönetici Giriş Bilgileri
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Giriş adı sabittir: <strong className="text-snow">destek@eternalproduction.net</strong>.
+              Buradan yönetici şifreni değiştirebilirsin.
+            </p>
+            <form onSubmit={handleAdminPasswordChange} className="space-y-3">
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                minLength={8}
+                maxLength={128}
+                autoComplete="new-password"
+                required
+                placeholder="Yeni şifre (en az 8 karakter)"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-forest-dark border border-forest focus:border-gold text-snow text-sm"
+              />
+              <input
+                type="password"
+                value={adminPasswordConfirm}
+                onChange={(e) => setAdminPasswordConfirm(e.target.value)}
+                minLength={8}
+                maxLength={128}
+                autoComplete="new-password"
+                required
+                placeholder="Yeni şifreyi tekrar yaz"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-forest-dark border border-forest focus:border-gold text-snow text-sm"
+              />
+              <button
+                type="submit"
+                disabled={adminPasswordLoading}
+                className="w-full py-2.5 rounded-xl bg-gold hover:bg-gold-light text-background font-bold text-xs disabled:opacity-50"
+              >
+                {adminPasswordLoading ? 'Güncelleniyor...' : 'Yönetici Şifresini Değiştir'}
+              </button>
+            </form>
           </div>
         </div>
       )}
