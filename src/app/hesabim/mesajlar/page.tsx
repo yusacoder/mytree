@@ -19,20 +19,23 @@ export default async function UserMessagesPage() {
 
   const adminSupabase = createAdminClient();
 
-  const { data: rawProfile } = await adminSupabase
-    .from('profiles')
-    .select('username')
-    .eq('id', user.id)
-    .maybeSingle();
+  const [{ data: rawProfile }, { data: initialTree }] = await Promise.all([
+    adminSupabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle(),
+    adminSupabase
+      .from('trees')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
 
   const profile = rawProfile as any;
   if (!profile) redirect('/giris');
 
-  let { data: rawTree } = await adminSupabase
-    .from('trees')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  let rawTree = initialTree;
 
   if (!rawTree) {
     const { data: createdTree, error: createTreeError } = await (adminSupabase.from('trees') as any)
@@ -53,29 +56,29 @@ export default async function UserMessagesPage() {
 
   const tree = rawTree as any;
 
-  const { data: rawSetting } = await adminSupabase
-    .from('app_settings')
-    .select('setting_value')
-    .eq('setting_key', 'message_unlock_date')
-    .maybeSingle();
+  const [{ data: rawSetting }, { data: rawMessages }, { data: rawOrnaments }] =
+    await Promise.all([
+      adminSupabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', 'message_unlock_date')
+        .maybeSingle(),
+      adminSupabase
+        .from('messages')
+        .select('id, ornament_id, sender_name, message_content, is_anonymous, created_at')
+        .eq('tree_id', tree.id)
+        .order('created_at', { ascending: false }),
+      adminSupabase
+        .from('ornaments')
+        .select('id, ornament_type')
+        .eq('tree_id', tree.id),
+    ]);
 
   const unlockDateStr =
     (rawSetting as any)?.setting_value || '2026-12-25T00:00:00.000Z';
   const unlockDate = new Date(unlockDateStr);
   const isUnlocked = new Date() >= unlockDate;
-
-  const { data: rawMessages } = await adminSupabase
-    .from('messages')
-    .select('id, ornament_id, sender_name, message_content, is_anonymous, created_at')
-    .eq('tree_id', tree.id)
-    .order('created_at', { ascending: false });
-
   const messages = (rawMessages || []) as any[];
-
-  const { data: rawOrnaments } = await adminSupabase
-    .from('ornaments')
-    .select('id, ornament_type')
-    .eq('tree_id', tree.id);
 
   const ornamentMap = new Map<string, string>();
   ((rawOrnaments || []) as any[]).forEach((orn) => {
