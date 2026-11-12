@@ -47,14 +47,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-snow/90 mb-1">
-              E-posta Adresi
-            </label>
+            <label className="block text-xs font-medium text-snow/90 mb-1">Kullanıcı Adı</label>
             <input
-              type="email"
-              name="email"
+              type="text"
+              name="username"
+              autoComplete="username"
               required
-              placeholder="ornek@mail.com"
+              placeholder="ornek_kullanici"
               className="w-full px-3.5 py-2.5 rounded-xl bg-forest-dark border border-forest/80 focus:border-gold focus:outline-none text-snow text-sm transition-colors"
             />
           </div>
