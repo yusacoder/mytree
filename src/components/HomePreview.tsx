@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ChristmasTree } from '@/components/tree/ChristmasTree';
+import { TreePine } from 'lucide-react';
 import { ORNAMENT_METADATA } from '@/components/tree/ornament-metadata';
 
 const DEMO_ORNAMENTS = [
