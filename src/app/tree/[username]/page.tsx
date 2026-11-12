@@ -1,8 +1,18 @@
-import React from 'react';
+import React, { cache } from 'react';
 import { notFound } from 'next/navigation';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { PublicTreeClient } from '@/components/tree/PublicTreeClient';
 import { Metadata } from 'next';
+
+const getPublicProfile = cache(async (username: string) => {
+  const supabase = createAdminClient();
+  const { data } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', username)
+    .maybeSingle();
+  return data as any;
+});
 
 interface TreePageProps {
   params: {
@@ -11,14 +21,9 @@ interface TreePageProps {
 }
 
 export async function generateMetadata({ params }: TreePageProps): Promise<Metadata> {
-  const supabase = createAdminClient();
-  const { data: rawProfile } = await supabase
-    .from('profiles')
-    .select('display_name, username')
-    .eq('username', params.username)
-    .maybeSingle();
-
-  const profile = rawProfile as { display_name: string; username: string } | null;
+  const profile = await getPublicProfile(params.username) as
+    | { display_name: string; username: string }
+    | null;
 
   if (!profile) {
     return {
@@ -38,14 +43,7 @@ export async function generateMetadata({ params }: TreePageProps): Promise<Metad
 
 export default async function TreePage({ params }: TreePageProps) {
   const adminSupabase = createAdminClient();
-
-  const { data: rawProfile } = await adminSupabase
-    .from('profiles')
-    .select('*')
-    .eq('username', params.username)
-    .maybeSingle();
-
-  const profile = rawProfile as any;
+  const profile = await getPublicProfile(params.username);
 
   if (!profile || profile.is_suspended) {
     notFound();
@@ -63,40 +61,44 @@ export default async function TreePage({ params }: TreePageProps) {
     notFound();
   }
 
-  try {
-    await (adminSupabase as any).rpc('increment_tree_visit', { p_tree_id: tree.id });
-  } catch {
-    const today = new Date().toISOString().split('T')[0];
-    const { data: existingVisit } = await (adminSupabase.from('tree_visits') as any)
-      .select('*')
-      .eq('tree_id', tree.id)
-      .eq('visit_date', today)
-      .maybeSingle();
+  const visitPromise = (async () => {
+    try {
+      await (adminSupabase as any).rpc('increment_tree_visit', { p_tree_id: tree.id });
+    } catch {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: existingVisit } = await (adminSupabase.from('tree_visits') as any)
+        .select('*')
+        .eq('tree_id', tree.id)
+        .eq('visit_date', today)
+        .maybeSingle();
 
-    if (existingVisit) {
-      await (adminSupabase.from('tree_visits') as any)
-        .update({ visit_count: existingVisit.visit_count + 1 })
-        .eq('id', existingVisit.id);
-    } else {
-      await (adminSupabase.from('tree_visits') as any).insert([
-        { tree_id: tree.id, visit_date: today, visit_count: 1 },
-      ]);
+      if (existingVisit) {
+        await (adminSupabase.from('tree_visits') as any)
+          .update({ visit_count: existingVisit.visit_count + 1 })
+          .eq('id', existingVisit.id);
+      } else {
+        await (adminSupabase.from('tree_visits') as any).insert([
+          { tree_id: tree.id, visit_date: today, visit_count: 1 },
+        ]);
+      }
     }
-  }
+  })();
 
-  const { data: rawOrnaments } = await adminSupabase
-    .from('ornaments')
-    .select('*')
-    .eq('tree_id', tree.id)
-    .order('created_at', { ascending: true });
+  const [{ data: rawOrnaments }, { data: rawSetting }] = await Promise.all([
+    adminSupabase
+      .from('ornaments')
+      .select('id, tree_id, ornament_type, position_x, position_y, created_at')
+      .eq('tree_id', tree.id)
+      .order('created_at', { ascending: true }),
+    adminSupabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'message_unlock_date')
+      .maybeSingle(),
+  ]);
 
+  await visitPromise;
   const ornaments = (rawOrnaments || []) as any[];
-
-  const { data: rawSetting } = await adminSupabase
-    .from('app_settings')
-    .select('setting_value')
-    .eq('setting_key', 'message_unlock_date')
-    .maybeSingle();
 
   const unlockDateStr =
     (rawSetting as any)?.setting_value || '2026-12-25T00:00:00.000Z';
