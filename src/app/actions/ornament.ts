@@ -40,8 +40,6 @@ export async function addOrnamentAction(formData: FormData) {
   const rawData = {
     treeId: formData.get('treeId'),
     ornamentType: formData.get('ornamentType'),
-    positionX: Number(formData.get('positionX')),
-    positionY: Number(formData.get('positionY')),
     senderName: formData.get('senderName') || 'Gizli Dost',
     messageContent: formData.get('messageContent'),
     isAnonymous: formData.get('isAnonymous') === 'true' || formData.get('isAnonymous') === 'on',
