@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { OrnamentTreeCarousel, OrnamentWithSender } from '@/components/tree/OrnamentTreeCarousel';
+import { AdminTreeSignature } from '@/components/tree/AdminTreeSignature';
 import { AddOrnamentModal } from '@/components/tree/AddOrnamentModal';
 import { OrnamentIcon, ORNAMENT_METADATA } from '@/components/tree/Ornaments';
 import { Tree, Profile } from '@/types/database';
@@ -36,6 +37,9 @@ export function PublicTreeClient({
 
   const unlockDate = new Date(unlockDateStr);
   const isUnlocked = new Date() >= unlockDate;
+  const adminSignature = (tree.settings as Record<string, unknown> | null)?.admin_signature as
+    | { note: string; signed_at?: string }
+    | undefined;
 
   const handleTreeClick = () => {
     if (!tree.accept_messages) return;
@@ -64,6 +68,12 @@ export function PublicTreeClient({
         <p className="text-xs sm:text-sm text-muted">
           Bu ağaç {profile.display_name} için oluşturuldu. Ağaca tıklayarak süs bırakabilirsin.
         </p>
+
+        {adminSignature?.note && (
+          <div className="mt-4 text-left">
+            <AdminTreeSignature signature={adminSignature} />
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <div className="px-3.5 py-1.5 rounded-xl bg-forest/50 border border-forest-light text-xs text-snow flex items-center gap-2">
