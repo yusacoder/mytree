@@ -31,16 +31,14 @@ export function PublicTreeClient({
 }: PublicTreeClientProps) {
   const [ornaments, setOrnaments] = useState<OrnamentWithSender[]>(initialOrnaments);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [clickCoords, setClickCoords] = useState<{ x: number; y: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [selectedOrnamentDetail, setSelectedOrnamentDetail] = useState<OrnamentWithSender | null>(null);
 
   const unlockDate = new Date(unlockDateStr);
   const isUnlocked = new Date() >= unlockDate;
 
-  const handleTreeClick = (coords?: { x: number; y: number }) => {
+  const handleTreeClick = () => {
     if (!tree.accept_messages) return;
-    if (coords) setClickCoords(coords);
     setIsModalOpen(true);
   };
 
@@ -112,10 +110,7 @@ export function PublicTreeClient({
         {tree.accept_messages && (
           <div className="mt-6 w-full flex flex-col items-center gap-2">
             <button
-              onClick={() => {
-                setClickCoords(null);
-                setIsModalOpen(true);
-              }}
+              onClick={() => setIsModalOpen(true)}
               className="w-full py-3.5 rounded-xl bg-gold hover:bg-gold-light text-background font-bold text-sm transition-all duration-200 shadow-xl shadow-gold/20 flex items-center justify-center gap-2"
             >
               <Send className="h-4 w-4" />
@@ -167,7 +162,6 @@ export function PublicTreeClient({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         treeId={tree.id}
-        defaultCoords={clickCoords}
         onSuccess={(newOrnament) => {
           setOrnaments((prev) => [...prev, newOrnament]);
         }}
