@@ -182,12 +182,13 @@ export async function updateUserTreeSignatureAction(userId: string, note: string
         : {};
     const updatedSettings = { ...currentSettings };
 
+    const signedAt = normalizedNote === null ? null : new Date().toISOString();
     if (normalizedNote === null) {
       delete updatedSettings.admin_signature;
     } else {
       updatedSettings.admin_signature = {
         note: normalizedNote,
-        signed_at: new Date().toISOString(),
+        signed_at: signedAt,
       };
     }
 
@@ -210,7 +211,7 @@ export async function updateUserTreeSignatureAction(userId: string, note: string
     revalidatePath('/hesabim');
     return {
       success: true,
-      signedAt: normalizedNote === null ? null : new Date().toISOString(),
+      signedAt,
     };
   } catch (err: unknown) {
     return {
