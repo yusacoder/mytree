@@ -57,6 +57,29 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
     .limit(100);
 
+  const userIds = ((rawUsers || []) as any[]).map((profile) => profile.id);
+  const { data: rawUserTrees } = userIds.length
+    ? await adminSupabase.from('trees').select('user_id, settings').in('user_id', userIds)
+    : { data: [] };
+
+  const treeByUser = new Map(
+    ((rawUserTrees || []) as any[]).map((tree) => [tree.user_id, tree])
+  );
+  const users = ((rawUsers || []) as any[]).map((profile) => {
+    const tree = treeByUser.get(profile.id);
+    const signature = tree?.settings?.admin_signature;
+    return {
+      ...profile,
+      admin_signature:
+        signature && typeof signature.note === 'string'
+          ? {
+              note: signature.note,
+              signed_at: typeof signature.signed_at === 'string' ? signature.signed_at : '',
+            }
+          : null,
+    };
+  });
+
   const { data: rawSettings } = await adminSupabase
     .from('app_settings')
     .select('setting_key, setting_value');
@@ -86,7 +109,7 @@ export default async function AdminPage() {
         totalMessages: totalMessages || 0,
         dailyVisits: dailyVisits || 0,
       }}
-      users={(rawUsers || []) as any}
+      users={users}
       settings={settingsMap}
       reports={(rawReports || []) as any}
       logs={(rawLogs || []) as any}
