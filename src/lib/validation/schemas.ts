@@ -57,7 +57,8 @@ export const addOrnamentSchema = z.object({
   positionY: z.number().min(10).max(85),
   senderName: z
     .string()
-    .max(30, 'İsim en fazla 30 karakter olabilir')
+    .min(3, 'İsim en az 3 karakter olmalıdır')
+    .max(12, 'İsim en fazla 12 karakter olabilir')
     .trim()
     .default('Gizli Dost'),
   messageContent: z
