@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DashboardNav } from '@/components/tree/DashboardNav';
 import { OrnamentTreeCarousel } from '@/components/tree/OrnamentTreeCarousel';
+import { AdminTreeSignature } from '@/components/tree/AdminTreeSignature';
 import Link from 'next/link';
 import {
   TreePine,
@@ -48,6 +49,10 @@ export default async function DashboardPage() {
   if (!tree) {
     redirect('/agac-olustur');
   }
+
+  const adminSignature = (tree.settings as Record<string, unknown> | null)?.admin_signature as
+    | { note: string; signed_at?: string }
+    | undefined;
 
   const [
     { data: rawOrnaments },
@@ -181,13 +186,16 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          <div className="w-full flex items-center justify-center py-2">
-            <OrnamentTreeCarousel
-              theme={tree.theme}
-              ornaments={ornaments}
-              interactive={false}
-              className="w-full max-h-[460px]"
-            />
+          <div className="w-full space-y-4 py-2">
+            {adminSignature?.note && <AdminTreeSignature signature={adminSignature} />}
+            <div className="flex items-center justify-center">
+              <OrnamentTreeCarousel
+                theme={tree.theme}
+                ornaments={ornaments}
+                interactive={false}
+                className="w-full max-h-[460px]"
+              />
+            </div>
           </div>
         </div>
 
