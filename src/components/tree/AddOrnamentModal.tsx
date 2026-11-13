@@ -10,7 +10,6 @@ interface AddOrnamentModalProps {
   isOpen: boolean;
   onClose: () => void;
   treeId: string;
-  defaultCoords: { x: number; y: number } | null;
   onSuccess: (ornament: Ornament & { sender_name: string; is_anonymous: boolean }) => void;
 }
 
@@ -29,7 +28,6 @@ export function AddOrnamentModal({
   isOpen,
   onClose,
   treeId,
-  defaultCoords,
   onSuccess,
 }: AddOrnamentModalProps) {
   const [selectedOrnament, setSelectedOrnament] = useState<OrnamentType>('gold_ball');
@@ -41,9 +39,6 @@ export function AddOrnamentModal({
 
   if (!isOpen) return null;
 
-  const x = defaultCoords?.x ?? Math.floor(Math.random() * 40 + 30);
-  const y = defaultCoords?.y ?? Math.floor(Math.random() * 50 + 25);
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -52,8 +47,6 @@ export function AddOrnamentModal({
     const formData = new FormData();
     formData.set('treeId', treeId);
     formData.set('ornamentType', selectedOrnament);
-    formData.set('positionX', x.toString());
-    formData.set('positionY', y.toString());
     formData.set('senderName', isAnonymous ? 'Anonim' : (senderName.trim() || 'Gizli Dost'));
     formData.set('messageContent', message);
     formData.set('isAnonymous', isAnonymous ? 'true' : 'false');
