@@ -53,8 +53,6 @@ export const addOrnamentSchema = z.object({
     'gift_box',
     'heart',
   ]),
-  positionX: z.number().min(10).max(90),
-  positionY: z.number().min(10).max(85),
   senderName: z
     .string()
     .min(3, 'İsim en az 3 karakter olmalıdır')
