@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChristmasTree } from '@/components/tree/ChristmasTree';
+import { OrnamentTreeCarousel, OrnamentWithSender } from '@/components/tree/OrnamentTreeCarousel';
 import { AddOrnamentModal } from '@/components/tree/AddOrnamentModal';
 import { OrnamentIcon, ORNAMENT_METADATA } from '@/components/tree/Ornaments';
-import { Tree, Profile, Ornament } from '@/types/database';
+import { Tree, Profile } from '@/types/database';
 import {
   Sparkles,
   TreePine,
@@ -19,7 +19,7 @@ import Link from 'next/link';
 interface PublicTreeClientProps {
   tree: Tree;
   profile: Profile;
-  initialOrnaments: Ornament[];
+  initialOrnaments: OrnamentWithSender[];
   unlockDateStr: string;
 }
 
@@ -29,11 +29,11 @@ export function PublicTreeClient({
   initialOrnaments,
   unlockDateStr,
 }: PublicTreeClientProps) {
-  const [ornaments, setOrnaments] = useState<Ornament[]>(initialOrnaments);
+  const [ornaments, setOrnaments] = useState<OrnamentWithSender[]>(initialOrnaments);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [clickCoords, setClickCoords] = useState<{ x: number; y: number } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [selectedOrnamentDetail, setSelectedOrnamentDetail] = useState<Ornament | null>(null);
+  const [selectedOrnamentDetail, setSelectedOrnamentDetail] = useState<OrnamentWithSender | null>(null);
 
   const unlockDate = new Date(unlockDateStr);
   const isUnlocked = new Date() >= unlockDate;
@@ -100,7 +100,7 @@ export function PublicTreeClient({
       )}
 
       <div className="w-full max-w-md glass-panel-gold rounded-3xl p-6 relative flex flex-col items-center">
-        <ChristmasTree
+        <OrnamentTreeCarousel
           theme={tree.theme}
           ornaments={ornaments}
           interactive={tree.accept_messages}
@@ -168,22 +168,8 @@ export function PublicTreeClient({
         onClose={() => setIsModalOpen(false)}
         treeId={tree.id}
         defaultCoords={clickCoords}
-        onSuccess={() => {
-          if (clickCoords) {
-            setOrnaments((prev) => [
-              ...prev,
-              {
-                id: Math.random().toString(),
-                tree_id: tree.id,
-                ornament_type: 'gold_ball',
-                position_x: clickCoords.x,
-                position_y: clickCoords.y,
-                created_at: new Date().toISOString(),
-              },
-            ]);
-          } else {
-            window.location.reload();
-          }
+        onSuccess={(newOrnament) => {
+          setOrnaments((prev) => [...prev, newOrnament]);
         }}
       />
 
