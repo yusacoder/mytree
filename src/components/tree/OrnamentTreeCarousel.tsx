@@ -71,7 +71,7 @@ export function OrnamentTreeCarousel({
                 ornaments={treeOrnaments}
                 interactive={interactive}
                 onTreeClick={onTreeClick}
-                onOrnamentClick={onTreeClick ? (ornament) => onOrnamentClick?.(ornament) : onOrnamentClick}
+                onOrnamentClick={onOrnamentClick}
                 className="w-full"
               />
             </div>
@@ -89,7 +89,7 @@ export function OrnamentTreeCarousel({
               type="button"
               aria-label="Önceki ağacı göster"
               onClick={() => setActiveTree((current) => Math.max(0, current - 1))}
-              className="absolute left-1 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gold/50 bg-background/90 text-gold shadow-lg transition hover:bg-forest"
+              className="absolute left-1 top-1/2 z-20 flex h-10 w-10 --translate-y-1/2 items-center justify-center rounded-full border border-gold/50 bg-background/90 text-gold shadow-lg transition hover:bg-forest"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
