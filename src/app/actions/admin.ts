@@ -135,6 +135,91 @@ export async function deleteUserAccountAction(targetUserId: string) {
   }
 }
 
+export async function updateUserTreeSignatureAction(userId: string, note: string | null) {
+  try {
+    const { adminId } = await checkAdminAuth();
+    if (
+      typeof userId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
+    ) {
+      return { success: false, error: 'Kullanıcı bilgisi geçersiz.' };
+    }
+    if (note !== null && typeof note !== 'string') {
+      return { success: false, error: 'İmza notu geçersiz.' };
+    }
+
+    const normalizedNote = note?.trim() ?? null;
+    if (normalizedNote !== null && (normalizedNote.length < 3 || normalizedNote.length > 200)) {
+      return { success: false, error: 'İmza notu 3 ile 200 karakter arasında olmalıdır.' };
+    }
+
+    const adminSupabase = createAdminClient();
+    const { data: rawProfile, error: profileError } = await adminSupabase
+      .from('profiles')
+      .select('username')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const profile = rawProfile as { username: string } | null;
+    if (profileError || !profile) {
+      return { success: false, error: 'Kullanıcı bulunamadı.' };
+    }
+
+    const { data: rawTree, error: treeError } = await adminSupabase
+      .from('trees')
+      .select('id, settings')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const tree = rawTree as { id: string; settings?: unknown } | null;
+    if (treeError || !tree) {
+      return { success: false, error: 'Bu kullanıcının ağacı bulunamadı.' };
+    }
+
+    const currentSettings =
+      tree.settings && typeof tree.settings === 'object' && !Array.isArray(tree.settings)
+        ? (tree.settings as Record<string, unknown>)
+        : {};
+    const updatedSettings = { ...currentSettings };
+
+    if (normalizedNote === null) {
+      delete updatedSettings.admin_signature;
+    } else {
+      updatedSettings.admin_signature = {
+        note: normalizedNote,
+        signed_at: new Date().toISOString(),
+      };
+    }
+
+    const { error: updateError } = await (adminSupabase.from('trees') as any)
+      .update({ settings: updatedSettings, updated_at: new Date().toISOString() })
+      .eq('id', tree.id);
+
+    if (updateError) {
+      return { success: false, error: 'Ağaç imzası kaydedilemedi.' };
+    }
+
+    await (adminSupabase.from('admin_logs') as any).insert({
+      admin_id: adminId,
+      action: normalizedNote === null ? 'remove_tree_signature' : 'sign_user_tree',
+      details: { target_user_id: userId, username: profile.username },
+    });
+
+    revalidatePath('/admin');
+    revalidatePath(`/tree/${profile.username}`);
+    revalidatePath('/hesabim');
+    return {
+      success: true,
+      signedAt: normalizedNote === null ? null : new Date().toISOString(),
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Ağaç imzası güncellenemedi.',
+    };
+  }
+}
+
 export async function updateReportStatusAction(reportId: string, status: 'resolved' | 'dismissed') {
   try {
     const { adminId } = await checkAdminAuth();
