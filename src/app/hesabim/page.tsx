@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DashboardNav } from '@/components/tree/DashboardNav';
-import { ChristmasTree } from '@/components/tree/ChristmasTree';
+import { OrnamentTreeCarousel } from '@/components/tree/OrnamentTreeCarousel';
 import Link from 'next/link';
 import {
   TreePine,
@@ -49,25 +49,44 @@ export default async function DashboardPage() {
     redirect('/agac-olustur');
   }
 
-  const [{ data: rawOrnaments }, { data: rawVisits }, { data: rawSetting }] =
-    await Promise.all([
-      adminSupabase
-        .from('ornaments')
-        .select('id, tree_id, ornament_type, position_x, position_y, created_at')
-        .eq('tree_id', tree.id)
-        .order('created_at', { ascending: true }),
-      adminSupabase
-        .from('tree_visits')
-        .select('visit_count')
-        .eq('tree_id', tree.id),
-      adminSupabase
-        .from('app_settings')
-        .select('setting_value')
-        .eq('setting_key', 'message_unlock_date')
-        .maybeSingle(),
-    ]);
+  const [
+    { data: rawOrnaments },
+    { data: rawMessages },
+    { data: rawVisits },
+    { data: rawSetting },
+  ] = await Promise.all([
+    adminSupabase
+      .from('ornaments')
+      .select('id, tree_id, ornament_type, position_x, position_y, created_at')
+      .eq('tree_id', tree.id)
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true }),
+    adminSupabase
+      .from('messages')
+      .select('ornament_id, sender_name, is_anonymous')
+      .eq('tree_id', tree.id),
+    adminSupabase
+      .from('tree_visits')
+      .select('visit_count')
+      .eq('tree_id', tree.id),
+    adminSupabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'message_unlock_date')
+      .maybeSingle(),
+  ]);
 
-  const ornaments = (rawOrnaments || []) as any[];
+  const messagesByOrnament = new Map(
+    ((rawMessages || []) as any[]).map((message) => [message.ornament_id, message])
+  );
+  const ornaments = ((rawOrnaments || []) as any[]).map((ornament) => {
+    const message = messagesByOrnament.get(ornament.id);
+    return {
+      ...ornament,
+      sender_name: message?.sender_name,
+      is_anonymous: Boolean(message?.is_anonymous),
+    };
+  });
   const totalVisits = (rawVisits || []).reduce(
     (acc: number, curr: any) => acc + (curr.visit_count || 0),
     0
@@ -163,7 +182,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="w-full flex items-center justify-center py-2">
-            <ChristmasTree
+            <OrnamentTreeCarousel
               theme={tree.theme}
               ornaments={ornaments}
               interactive={false}
