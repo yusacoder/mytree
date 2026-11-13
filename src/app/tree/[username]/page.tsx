@@ -84,12 +84,21 @@ export default async function TreePage({ params }: TreePageProps) {
     }
   })();
 
-  const [{ data: rawOrnaments }, { data: rawSetting }] = await Promise.all([
+  const [
+    { data: rawOrnaments },
+    { data: rawMessages },
+    { data: rawSetting },
+  ] = await Promise.all([
     adminSupabase
       .from('ornaments')
       .select('id, tree_id, ornament_type, position_x, position_y, created_at')
       .eq('tree_id', tree.id)
-      .order('created_at', { ascending: true }),
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true }),
+    adminSupabase
+      .from('messages')
+      .select('ornament_id, sender_name, is_anonymous')
+      .eq('tree_id', tree.id),
     adminSupabase
       .from('app_settings')
       .select('setting_value')
@@ -98,7 +107,17 @@ export default async function TreePage({ params }: TreePageProps) {
   ]);
 
   await visitPromise;
-  const ornaments = (rawOrnaments || []) as any[];
+  const messagesByOrnament = new Map(
+    ((rawMessages || []) as any[]).map((message) => [message.ornament_id, message])
+  );
+  const ornaments = ((rawOrnaments || []) as any[]).map((ornament) => {
+    const message = messagesByOrnament.get(ornament.id);
+    return {
+      ...ornament,
+      sender_name: message?.sender_name,
+      is_anonymous: Boolean(message?.is_anonymous),
+    };
+  });
 
   const unlockDateStr =
     (rawSetting as any)?.setting_value || '2026-12-25T00:00:00.000Z';
