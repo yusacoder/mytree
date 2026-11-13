@@ -6,9 +6,9 @@ import { Ornament, TreeTheme } from '@/types/database';
 
 interface ChristmasTreeProps {
   theme?: TreeTheme | string;
-  ornaments?: Ornament[];
+  ornaments?: Array<Ornament & { sender_name?: string; is_anonymous?: boolean }>;
   onTreeClick?: (coords?: { x: number; y: number }) => void;
-  onOrnamentClick?: (ornament: Ornament) => void;
+  onOrnamentClick?: (ornament: Ornament & { sender_name?: string; is_anonymous?: boolean }) => void;
   interactive?: boolean;
   className?: string;
   showTopperStar?: boolean;
@@ -278,11 +278,18 @@ export function ChristmasTree({
             className="absolute pointer-events-auto transition-transform duration-200 hover:scale-125 focus:outline-none focus:ring-2 focus:ring-gold rounded-full p-1 group"
             title={`Süs: ${ornament.ornament_type}`}
           >
-            <OrnamentIcon
-              type={ornament.ornament_type}
-              size={32}
-              className="drop-shadow-lg transition-transform group-hover:rotate-6"
-            />
+            <span className="flex flex-col items-center">
+              <OrnamentIcon
+                type={ornament.ornament_type}
+                size={32}
+                className="drop-shadow-lg transition-transform group-hover:rotate-6"
+              />
+              {(ornament.is_anonymous || ornament.sender_name) && (
+                <span className="mt-[-2px] max-w-[76px] truncate rounded bg-background/90 px-1 text-[9px] leading-3 text-snow shadow">
+                  {ornament.is_anonymous ? 'Anonim Dost' : ornament.sender_name}
+                </span>
+              )}
+            </span>
           </button>
         ))}
       </div>
