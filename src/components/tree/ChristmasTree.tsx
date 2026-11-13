@@ -285,7 +285,7 @@ export function ChristmasTree({
                 className="drop-shadow-lg transition-transform group-hover:rotate-6"
               />
               {(ornament.is_anonymous || ornament.sender_name) && (
-                <span className="mt-[-2px] max-w-[76px] truncate rounded bg-background/90 px-1 text-[9px] leading-3 text-snow shadow">
+                <span className="mt-[-2px] block max-w-[76px] truncate rounded bg-background/90 px-1 text-[9px] leading-3 text-snow shadow">
                   {ornament.is_anonymous ? 'Anonim Dost' : ornament.sender_name}
                 </span>
               )}
