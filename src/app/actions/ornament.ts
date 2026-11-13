@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { addOrnamentSchema, reportSchema } from '@/lib/validation/schemas';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
+import { getOrnamentTreePosition } from '@/lib/tree-ornament-layout';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
@@ -57,8 +58,6 @@ export async function addOrnamentAction(formData: FormData) {
   const {
     treeId,
     ornamentType,
-    positionX,
-    positionY,
     senderName,
     messageContent,
     isAnonymous,
@@ -86,14 +85,24 @@ export async function addOrnamentAction(formData: FormData) {
       };
     }
 
+    const { count: ornamentCount, error: countError } = await adminSupabase
+      .from('ornaments')
+      .select('id', { count: 'exact', head: true })
+      .eq('tree_id', treeId);
+
+    if (countError) {
+      return { success: false, error: 'Ağacın süs sırası belirlenemedi.' };
+    }
+
+    const position = getOrnamentTreePosition(ornamentCount ?? 0);
     const { data: rawOrnament, error: ornamentError } = await (adminSupabase
       .from('ornaments') as any)
       .insert([
         {
           tree_id: treeId,
           ornament_type: ornamentType,
-          position_x: positionX,
-          position_y: positionY,
+          position_x: position.x,
+          position_y: position.y,
         },
       ])
       .select()
@@ -128,7 +137,14 @@ export async function addOrnamentAction(formData: FormData) {
     }
 
     revalidatePath(`/tree`);
-    return { success: true };
+    return {
+      success: true,
+      ornament: {
+        ...(rawOrnament as any),
+        sender_name: isAnonymous ? 'Anonim Dost' : senderName,
+        is_anonymous: isAnonymous,
+      },
+    };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'İşlem gerçekleştirilemedi.';
     return { success: false, error: message };
