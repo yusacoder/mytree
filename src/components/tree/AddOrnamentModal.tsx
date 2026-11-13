@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { OrnamentIcon, ORNAMENT_METADATA } from './Ornaments';
-import { OrnamentType } from '@/types/database';
+import { Ornament, OrnamentType } from '@/types/database';
 import { addOrnamentAction } from '@/app/actions/ornament';
 import { X, Sparkles, Send, Loader2, AlertCircle } from 'lucide-react';
 
@@ -11,7 +11,7 @@ interface AddOrnamentModalProps {
   onClose: () => void;
   treeId: string;
   defaultCoords: { x: number; y: number } | null;
-  onSuccess: () => void;
+  onSuccess: (ornament: Ornament & { sender_name: string; is_anonymous: boolean }) => void;
 }
 
 const ORNAMENT_OPTIONS: OrnamentType[] = [
@@ -64,7 +64,7 @@ export function AddOrnamentModal({
       setLoading(false);
       setMessage('');
       setSenderName('');
-      onSuccess();
+      onSuccess(result.ornament);
       onClose();
     } else {
       setError(result.error || 'Bir sorun oluştu.');
@@ -134,7 +134,7 @@ export function AddOrnamentModal({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-snow/90">
-                Adın / Lakabın
+                Adın / Lakabın (3–12 karakter)
               </label>
               <label className="flex items-center gap-2 cursor-pointer text-xs text-muted hover:text-snow">
                 <input
@@ -153,7 +153,9 @@ export function AddOrnamentModal({
               value={isAnonymous ? 'Anonim Dost' : senderName}
               onChange={(e) => setSenderName(e.target.value)}
               placeholder="Örn: Ayşe veya Liseden Dostun"
-              maxLength={30}
+              minLength={3}
+              maxLength={12}
+              required={!isAnonymous}
               className="w-full px-3.5 py-2.5 rounded-xl bg-forest-dark border border-forest/80 focus:border-gold focus:outline-none text-snow text-xs sm:text-sm transition-colors disabled:opacity-50"
             />
           </div>
