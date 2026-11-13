@@ -8,6 +8,7 @@ import {
   deleteSpamMessageAction,
   deleteUserAccountAction,
   updateAdminPasswordAction,
+  updateUserTreeSignatureAction,
 } from '@/app/actions/admin';
 import {
   Users,
@@ -21,6 +22,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Trash2,
+  BadgeCheck,
   Activity,
   Sliders,
 } from 'lucide-react';
@@ -39,6 +41,7 @@ interface AdminDashboardClientProps {
     is_admin: boolean;
     is_suspended: boolean;
     created_at: string;
+    admin_signature: { note: string; signed_at: string } | null;
   }>;
   settings: Record<string, string>;
   reports: Array<{
@@ -77,6 +80,9 @@ export function AdminDashboardClient({
   const [adminPasswordConfirm, setAdminPasswordConfirm] = useState('');
   const [adminPasswordLoading, setAdminPasswordLoading] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [signatureTarget, setSignatureTarget] = useState<AdminDashboardClientProps['users'][number] | null>(null);
+  const [signatureNote, setSignatureNote] = useState('');
+  const [savingSignature, setSavingSignature] = useState(false);
 
   const showNotification = (text: string, isError = false) => {
     setMsg({ text, isError });
@@ -143,6 +149,72 @@ export function AdminDashboardClient({
       showNotification('Kullanıcı silinemedi. Lütfen tekrar deneyin.', true);
     } finally {
       setDeletingUserId(null);
+    }
+  };
+
+  const openTreeSignature = (user: AdminDashboardClientProps['users'][number]) => {
+    setSignatureTarget(user);
+    setSignatureNote(user.admin_signature?.note || '');
+  };
+
+  const handleSaveTreeSignature = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!signatureTarget) return;
+
+    const note = signatureNote.trim();
+    if (note.length < 3 || note.length > 200) {
+      showNotification('İmza notu 3 ile 200 karakter arasında olmalıdır.', true);
+      return;
+    }
+
+    setSavingSignature(true);
+    try {
+      const result = await updateUserTreeSignatureAction(signatureTarget.id, note);
+      if (!result.success) {
+        showNotification(result.error || 'Ağaç imzalanamadı.', true);
+        return;
+      }
+
+      const signedAt = result.signedAt || new Date().toISOString();
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === signatureTarget.id
+            ? { ...user, admin_signature: { note, signed_at: signedAt } }
+            : user
+        )
+      );
+      setSignatureTarget(null);
+      setSignatureNote('');
+      showNotification(`@${signatureTarget.username} ağacına Eternal imzası eklendi.`);
+    } catch {
+      showNotification('İmza kaydedilemedi. Lütfen tekrar deneyin.', true);
+    } finally {
+      setSavingSignature(false);
+    }
+  };
+
+  const handleRemoveTreeSignature = async () => {
+    if (!signatureTarget) return;
+    setSavingSignature(true);
+    try {
+      const result = await updateUserTreeSignatureAction(signatureTarget.id, null);
+      if (!result.success) {
+        showNotification(result.error || 'Ağaç imzası kaldırılamadı.', true);
+        return;
+      }
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user.id === signatureTarget.id ? { ...user, admin_signature: null } : user
+        )
+      );
+      setSignatureTarget(null);
+      setSignatureNote('');
+      showNotification(`@${signatureTarget.username} ağacının imzası kaldırıldı.`);
+    } catch {
+      showNotification('İmza kaldırılamadı. Lütfen tekrar deneyin.', true);
+    } finally {
+      setSavingSignature(false);
     }
   };
 
@@ -361,6 +433,7 @@ export function AdminDashboardClient({
                   <th className="px-4 py-3">Görünen İsim</th>
                   <th className="px-4 py-3">Yetki</th>
                   <th className="px-4 py-3">Durum</th>
+                  <th className="px-4 py-3">Ağaç İmzası</th>
                   <th className="px-4 py-3">Kayıt Tarihi</th>
                   <th className="px-4 py-3 text-right">İşlem</th>
                 </tr>
@@ -390,11 +463,28 @@ export function AdminDashboardClient({
                         </span>
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      {user.admin_signature ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/10 px-2 py-1 text-[10px] font-semibold text-gold-light">
+                          <BadgeCheck className="h-3 w-3" />
+                          İmzalı
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-muted">İmza yok</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-muted">
                       {new Date(user.created_at).toLocaleDateString('tr-TR')}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-2 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => openTreeSignature(user)}
+                          className="px-3 py-1 rounded-lg text-[11px] font-semibold text-gold-light bg-gold/10 border border-gold/30 hover:bg-gold/20"
+                        >
+                          {user.admin_signature ? 'Notu Düzenle' : 'İmzala'}
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleToggleSuspension(user.id, user.is_suspended)}
@@ -604,6 +694,87 @@ export function AdminDashboardClient({
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {signatureTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tree-signature-title"
+        >
+          <div className="w-full max-w-lg space-y-5 rounded-3xl border border-gold/40 bg-surface p-6 shadow-2xl shadow-gold/10">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-gold/40 bg-gold/10 text-gold">
+                <BadgeCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 id="tree-signature-title" className="font-serif text-lg font-bold text-snow">
+                  Eternal ekip imzası
+                </h2>
+                <p className="mt-1 text-xs text-muted">
+                  @{signatureTarget.username} ağacında herkese görünecek kısa bir not yazın.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveTreeSignature} className="space-y-4">
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <label htmlFor="tree-signature-note" className="text-xs font-semibold text-snow/90">
+                    İmza notu
+                  </label>
+                  <span className="text-[10px] text-muted">{signatureNote.length} / 200</span>
+                </div>
+                <textarea
+                  id="tree-signature-note"
+                  required
+                  minLength={3}
+                  maxLength={200}
+                  rows={4}
+                  autoFocus
+                  value={signatureNote}
+                  onChange={(e) => setSignatureNote(e.target.value)}
+                  placeholder="Bu ağacın yılbaşı ruhu Eternal ekibi tarafından onaylandı..."
+                  className="w-full resize-none rounded-xl border border-forest/80 bg-forest-dark px-3.5 py-3 text-sm text-snow outline-none transition-colors focus:border-gold"
+                />
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+                <div className="flex gap-2">
+                  {signatureTarget.admin_signature && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveTreeSignature}
+                      disabled={savingSignature}
+                      className="rounded-xl border border-red-500/30 px-4 py-2.5 text-xs font-semibold text-red-300 transition-colors hover:bg-red-950/50 disabled:opacity-50"
+                    >
+                      İmzayı Kaldır
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSignatureTarget(null);
+                      setSignatureNote('');
+                    }}
+                    disabled={savingSignature}
+                    className="rounded-xl border border-forest px-4 py-2.5 text-xs font-semibold text-snow/80 transition-colors hover:bg-forest/50 disabled:opacity-50"
+                  >
+                    İptal
+                  </button>
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingSignature || signatureNote.trim().length < 3}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-xs font-bold text-background transition-colors hover:bg-gold-light disabled:opacity-50"
+                >
+                  {savingSignature ? 'Kaydediliyor…' : 'İmzayı Kaydet'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
